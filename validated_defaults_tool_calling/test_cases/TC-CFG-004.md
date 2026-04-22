@@ -3,8 +3,10 @@ test_case_id: TC-CFG-004
 source_key: RHAISTRAT-1473
 priority: P0
 status: Draft
-automation_status: Not Started
+automation_status: Complete
 last_updated: '2026-04-22'
+automation_file: tests/model_registry/model_catalog/metadata/test_tool_calling_config.py
+automation_function: test_enable_auto_tool_choice_in_model_card
 ---
 # TC-CFG-004: Validate --enable-auto-tool-choice flag is set and functional for each in-scope model
 
