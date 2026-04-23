@@ -1,45 +1,35 @@
 ---
 test_case_id: TC-CFG-004
 source_key: RHAISTRAT-1473
-priority: P0
+priority: P2
 status: Draft
-automation_status: Complete
-last_updated: '2026-04-22'
-automation_file: tests/model_registry/model_catalog/metadata/test_tool_calling_config.py
-automation_function: test_enable_auto_tool_choice_in_model_card
+automation_status: Not Started
+last_updated: '2026-04-23'
 ---
-# TC-CFG-004: Validate --enable-auto-tool-choice flag is set and functional for each in-scope model
+# TC-CFG-004: Validate requiredArgs contains valid CLI arguments
 
-**Objective**: Confirm that the `--enable-auto-tool-choice` flag is documented in each model card and that enabling it allows vLLM to automatically select tools based on user prompts.
+**Objective**: Confirm that any `requiredArgs` entries in `servingConfig.toolCalling` are valid vLLM CLI arguments that can be passed without causing startup failures.
+
+**Preconditions**:
+- At least one in-scope model has `requiredArgs` populated in its `servingConfig.toolCalling` (e.g., `["--config_format granite"]`)
 
 **Test Steps**:
-1. For each in-scope model, verify the model card's "Tool Calling Configuration" section includes `--enable-auto-tool-choice`
-2. Start vLLM with all four documented flags, including `--enable-auto-tool-choice`
-3. Send a tool calling request with `"tool_choice": "auto"` and a prompt that clearly requires a tool (e.g., weather query with a weather tool defined)
-4. Verify that vLLM automatically selects the appropriate tool without the user explicitly specifying `"tool_choice": {"type": "function", "function": {"name": "..."}}`
-
-**Test Data**:
-```json
-{
-  "model": "<model-name>",
-  "messages": [{"role": "user", "content": "What is the weather in Boston today?"}],
-  "tools": [
-    {
-      "type": "function",
-      "function": {
-        "name": "get_weather",
-        "description": "Get the current weather for a location",
-        "parameters": {"type": "object", "properties": {"location": {"type": "string"}}, "required": ["location"]}
-      }
-    }
-  ],
-  "tool_choice": "auto"
-}
-```
+1. Identify a model with `requiredArgs` in its `servingConfig.toolCalling`
+2. Extract the `requiredArgs` array values
+3. Start vLLM with all standard flags plus the `requiredArgs` values:
+   ```bash
+   vllm serve <model-path> \
+     --tool-call-parser=<toolCallParser> \
+     --chat-template=<chatTemplate> \
+     --enable-auto-tool-choice \
+     <requiredArgs values>
+   ```
+4. Check vLLM startup logs for any argument parsing errors
+5. Verify vLLM reaches ready state
 
 **Expected Results**:
-- vLLM responds with a `tool_calls` array containing the selected tool
-- The `function.name` in the response matches `get_weather`
-- `finish_reason` is `"tool_calls"`
+- vLLM starts successfully with all `requiredArgs` values included
+- No `unrecognized arguments` or `invalid value` errors appear in logs
+- The model loads and reaches ready state as verified via `GET /v1/models`
 
 **Notes**: To be filled later in the process.

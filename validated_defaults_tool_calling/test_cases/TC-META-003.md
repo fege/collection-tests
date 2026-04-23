@@ -1,23 +1,28 @@
 ---
 test_case_id: TC-META-003
 source_key: RHAISTRAT-1473
-priority: P1
+priority: P0
 status: Draft
 automation_status: Not Started
-last_updated: '2026-04-22'
+last_updated: '2026-04-23'
 ---
-# TC-META-003: Verify model card configuration is tied to a specific inference server version
+# TC-META-003: Verify servingConfig absent from API response for model without validated config
 
-**Objective**: Confirm that each published tool calling configuration in the model card specifies the Red Hat AI Inference Server version it was validated against.
+**Objective**: Confirm that models without validated tool calling configurations do not expose `servingConfig` in the API response.
+
+**Preconditions**:
+- AI Hub catalog service deployed
+- At least one model loaded from `metadata.yaml` without a `servingConfig` block
 
 **Test Steps**:
-1. For each in-scope model, read the "Tool Calling Configuration" section from the model card
-2. Verify that the section includes a version reference for the Red Hat AI Inference Server (vLLM) against which the configuration was validated
-3. Confirm the referenced version matches a released or candidate version of the inference server
+1. Retrieve a model without tool calling config: `GET /api/catalog/models/{modelId}` (e.g., `granite-7b-redhat-lab`)
+2. Parse the JSON response
+3. Verify the `servingConfig` field is entirely absent (not present as `null` or empty object)
+4. Verify the model's `tasks` array does NOT include `tool-calling`
 
 **Expected Results**:
-- Each model card's tool calling configuration includes the inference server version it was validated against
-- The version string is concrete (e.g., "0.8.4" or "RHOAI 3.5 GA"), not vague (e.g., "latest")
-- The version matches the inference server version shipped in the target RHOAI release
+- `servingConfig` key is not present in the JSON response
+- `tasks` array contains only applicable tasks (e.g., `["text-generation"]`)
+- No tool calling configuration data is exposed for unvalidated models
 
 **Notes**: To be filled later in the process.

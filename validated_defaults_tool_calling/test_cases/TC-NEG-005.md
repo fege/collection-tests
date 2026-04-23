@@ -4,20 +4,30 @@ source_key: RHAISTRAT-1473
 priority: P1
 status: Draft
 automation_status: Not Started
-last_updated: '2026-04-22'
+last_updated: '2026-04-23'
 ---
-# TC-NEG-005: Verify model card with partial configuration is not published
+# TC-NEG-005: Partial servingConfig (toolCallParser present but chatTemplate missing) is not published
 
-**Objective**: Confirm that the model-metadata-collection publishing process rejects model cards with incomplete tool calling configurations (partial data), preventing unvalidated content from reaching users.
+**Objective**: Confirm that a model with an incomplete `servingConfig.toolCalling` (e.g., `toolCallParser` present but `chatTemplate` missing) is not published to the catalog API with partial tool calling configuration.
+
+**Preconditions**:
+- Access to the model metadata ingestion pipeline or database
 
 **Test Steps**:
-1. Create a test model card with a "Tool Calling Configuration" section that has only some of the four required arguments (e.g., `--tool-call-parser` present but `--chat-template` missing)
-2. Attempt to publish or merge this model card into the model-metadata-collection repository following the documented process
-3. Verify that the publishing process catches the incomplete configuration
+1. Prepare a model metadata entry with partial `servingConfig.toolCalling`:
+   - Set `toolCallParser` to a valid value
+   - Omit `chatTemplate` entirely
+   - Set `enableAutoToolChoice` to `true`
+2. Attempt to ingest or publish this model metadata through the normal pipeline
+3. Query the catalog API for this model:
+   ```
+   GET /api/v1/models/<model-id>
+   ```
+4. Inspect the response for `servingConfig.toolCalling`
 
 **Expected Results**:
-- The publishing process rejects or flags the model card with incomplete tool calling configuration
-- The partial configuration does NOT reach the published model catalog
-- An error or warning message identifies which required arguments are missing
+- Either the ingestion pipeline rejects the partial configuration with a validation error, OR
+- The catalog API does not expose the partial `servingConfig.toolCalling` to consumers
+- Users are never presented with an incomplete tool calling configuration that would fail at deployment time
 
 **Notes**: To be filled later in the process.

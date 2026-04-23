@@ -4,30 +4,37 @@ source_key: RHAISTRAT-1473
 priority: P1
 status: Draft
 automation_status: Not Started
-last_updated: '2026-04-22'
+last_updated: '2026-04-23'
 ---
-# TC-NEG-003: Verify serving a model with missing --chat-template produces a detectable failure
+# TC-NEG-003: Missing chatTemplate produces detectable failure
 
-**Objective**: Confirm that omitting the `--chat-template` argument (when the model requires one for tool calling) results in a detectable failure.
+**Objective**: Confirm that deploying a model without specifying the `chatTemplate` (or with a non-existent path) results in a detectable failure.
 
 **Preconditions**:
 - One in-scope model is available on target hardware
-- The model requires a specific chat template for tool calling (as documented in the model card)
+- The correct `chatTemplate` path is known from `servingConfig.toolCalling`
 
 **Test Steps**:
-1. Start vLLM with the correct `--tool-call-parser` and `--enable-auto-tool-choice` but WITHOUT `--chat-template`:
+1. Select an in-scope model that requires a custom `chatTemplate`
+2. Deploy the model without the `--chat-template` flag:
    ```bash
-   vllm serve <model-path> --tool-call-parser=<correct-value> --enable-auto-tool-choice
+   vllm serve <model-path> \
+     --tool-call-parser=<correct-toolCallParser> \
+     --enable-auto-tool-choice
    ```
-2. If vLLM starts, send a tool calling request with a simple tool definition
-3. Examine the response and logs for template-related failures:
-   - Tool definitions not injected into the prompt
-   - `tool_calls` array is empty despite a clear tool-requiring prompt
-   - Template rendering errors in server logs
+3. Alternatively, deploy with a non-existent template path:
+   ```bash
+   vllm serve <model-path> \
+     --tool-call-parser=<correct-toolCallParser> \
+     --chat-template=/nonexistent/path/template.jinja \
+     --enable-auto-tool-choice
+   ```
+4. Check vLLM startup logs for errors
+5. If vLLM starts, send a tool calling request and check for malformed responses
 
 **Expected Results**:
-- vLLM either fails to start with a clear error about the missing chat template OR
-- Tool calling requests fail or produce incorrect results without the template
-- The failure is detectable and not silent
+- Either vLLM fails to start with a `FileNotFoundError` or template loading error, OR
+- Tool calling responses are incorrect (wrong format, no `tool_calls`, parsing failures)
+- The failure is detectable and clearly attributable to the missing/incorrect chat template
 
 **Notes**: To be filled later in the process.
