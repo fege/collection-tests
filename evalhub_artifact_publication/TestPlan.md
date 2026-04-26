@@ -2,12 +2,13 @@
 feature: evalhub_artifact_publication
 source_key: RHAISTRAT-1525
 source_type: strat
-version: 1.0.0
+version: 1.1.0
 status: In Review
 author: TrustyAI / Responsible AI
 components:
 - Model Eval
-additional_docs: []
+additional_docs:
+- /tmp/mock-adr-evalhub.md
 last_updated: '2026-04-26'
 reviewers: []
 ---
@@ -38,6 +39,9 @@ This feature is critical for downstream consumers — CI/CD pipelines, governanc
 - Error handling: partial failure detection, URI resolution timeouts, per-artifact outcome reporting
 - Schema validation: additive-only API changes verified by openapi-diff
 - Security: artifact URI format validation (must not expose raw S3/MinIO URLs or presigned URLs)
+- EvalHub Server: batch job status retrieval endpoint (POST /api/v1/evaluations/jobs/batch)
+- Audit: artifact URI resolution logging to audit trail
+- Security: URI sanitization rules applied to batch responses
 
 #### Out of Scope (Other Teams)
 - Changes to EvalHub report content or format
@@ -58,6 +62,9 @@ This feature is critical for downstream consumers — CI/CD pipelines, governanc
 5. Validate that jobs with zero artifacts complete with `Complete` status and empty `artifact_uris` list
 6. Confirm that all three adapters (lm-evaluation-harness, GuideLLM, LightEval) inherit URI resolution and failure reporting behavior via DefaultCallbacks without adapter-specific code
 7. Verify that API schema changes are additive-only and backward-compatible via openapi-diff validation
+8. Verify that POST /api/v1/evaluations/jobs/batch correctly accepts a list of job IDs and returns an array of job status objects with artifact_uris
+9. Validate that all artifact URI resolutions are logged to the audit trail with timestamp, job_id, run_id, and success/failure status
+10. Confirm that the per-job timeout (5s) applies independently to each job in a batch request, not to the entire batch operation
 
 ---
 
@@ -88,8 +95,8 @@ This feature is critical for downstream consumers — CI/CD pipelines, governanc
 ### 3.1 Test Cluster Configuration
 - OpenShift cluster (version TBD)
 - RHOAI deployment (version TBD, with MLflow v3.10.1+rhaiv.1)
-- PostgreSQL database for EvalHub server
-- Python runtime for adapter containers (lm-evaluation-harness, GuideLLM, LightEval)
+- PostgreSQL 13+ database for EvalHub server
+- Python 3.11+ runtime for adapter containers (lm-evaluation-harness, GuideLLM, LightEval)
 - Go runtime for eval-hub server and sidecar components
 - MLflow Tracking Server v3.10.1+rhaiv.1 with artifact store backend
 - trustyai-service-operator deployed
@@ -102,6 +109,8 @@ This feature is critical for downstream consumers — CI/CD pipelines, governanc
 - Provider YAML configurations from config/providers/*.yaml
 - Schema migration scripts for PostgreSQL artifact_uris column
 - Sample API request/response payloads for job status, events, and MLflow API responses
+- Sample evaluation job dataset with 50+ completed jobs containing artifact metadata
+- Batch endpoint test payloads with up to 50 job IDs
 
 ### 3.3 Test Users
 - Service account with permissions to create/read evaluation jobs
@@ -123,6 +132,7 @@ This feature is critical for downstream consumers — CI/CD pipelines, governanc
 | eval-hub-sdk DefaultCallbacks (status event payload) | Python Method | Construct artifact_uris and uri_resolution_error fields | P0 |
 | EvalHub PostgreSQL schema migration | Database | Persist artifact metadata and CompleteWithWarnings status | P0 |
 | openapi-diff validation | CLI | Verify schema changes are additive-only | P1 |
+| /api/v1/evaluations/jobs/batch | POST | Retrieve multiple job statuses with artifact_uris in a single request | P0 |
 
 ---
 
@@ -135,15 +145,15 @@ This feature is critical for downstream consumers — CI/CD pipelines, governanc
 
 | Category | Test Cases | Priority Distribution |
 |----------|------------|----------------------|
-| TC-API | 3 | 3 P0 |
+| TC-API | 4 | 4 P0 |
 | TC-SDK | 3 | 2 P0, 1 P1 |
 | TC-STATUS | 4 | 4 P0 |
-| TC-SEC | 1 | 1 P0 |
-| TC-PERF | 2 | 2 P2 |
+| TC-SEC | 2 | 2 P0 |
+| TC-PERF | 3 | 1 P1, 2 P2 |
 | TC-COMPAT | 3 | 1 P0, 2 P1 |
-| TC-NEG | 2 | 1 P0, 1 P1 |
-| TC-E2E | 3 | 3 P0 |
-| **Total** | **20** | **13 P0, 5 P1, 2 P2** |
+| TC-NEG | 3 | 2 P0, 1 P1 |
+| TC-E2E | 4 | 4 P0 |
+| **Total** | **26** | **17 P0, 6 P1, 3 P2** |
 
 ### 5.2 Test Case Naming Convention
 
@@ -174,6 +184,7 @@ End-to-end scenarios that validate the user journeys defined in the strategy. Ea
 | TC-E2E-001 | Successful evaluation with artifact URIs surfaced in job status | GET jobs/{id}, POST events, GET artifacts/list, GET get-artifact, DefaultCallbacks (both) | P0 |
 | TC-E2E-002 | Partial artifact failure end-to-end with CompleteWithWarnings | GET jobs/{id}, POST events, DefaultCallbacks (both), PostgreSQL | P0 |
 | TC-E2E-003 | CI/CD pipeline consumes artifact URIs for automated report retrieval | GET jobs/{id}, GET get-artifact | P0 |
+| TC-E2E-004 | Batch status retrieval for governance dashboard with mixed job outcomes | POST jobs/batch, GET get-artifact | P0 |
 
 ### 6.2 E2E Coverage Matrix
 
@@ -182,11 +193,12 @@ End-to-end scenarios that validate the user journeys defined in the strategy. Ea
 | GET /api/v1/evaluations/jobs/{id} | TC-E2E-001, TC-E2E-002, TC-E2E-003 |
 | POST /api/v1/evaluations/jobs/{id}/events | TC-E2E-001, TC-E2E-002 |
 | GET /api/2.0/mlflow/artifacts/list | TC-E2E-001 |
-| GET /get-artifact | TC-E2E-001, TC-E2E-003 |
+| GET /get-artifact | TC-E2E-001, TC-E2E-003, TC-E2E-004 |
 | DefaultCallbacks (URI resolution) | TC-E2E-001, TC-E2E-002 |
 | DefaultCallbacks (status event payload) | TC-E2E-001, TC-E2E-002 |
 | PostgreSQL schema migration | TC-E2E-002 |
 | openapi-diff validation | — (covered by TC-COMPAT-003) |
+| POST /api/v1/evaluations/jobs/batch | TC-E2E-004 |
 
 ---
 
@@ -210,10 +222,13 @@ Each category below must be explicitly addressed. If a category does not apply t
 - **API Latency** — Measure p99 latency increase for GET /api/v1/evaluations/jobs/{id} (target: < 50ms increase) and POST /api/v1/evaluations/jobs/{id}/events (target: < 100ms increase)
 - **MLflow API Impact** — Measure impact of GET /api/2.0/mlflow/artifacts/list on job completion timing; test under concurrent job completions
 - **Resource Consumption** — Validate PostgreSQL storage impact of artifact_uris field for large artifact counts; test query performance with new schema
+- **Batch Endpoint Latency** — p99 latency must remain under 200ms for batch sizes up to 50 job IDs
+- **Timeout Budget** — per-job timeout of 5s is correctly enforced (batch of 10 jobs = 50s total budget, not 5s total)
 
 ### 7.4 RBAC/Authorization
 
-**Not Applicable** — The feature extends existing authenticated endpoints. RBAC/authorization logic for GET /api/v1/evaluations/jobs/{id} and POST /api/v1/evaluations/jobs/{id}/events is unchanged. The sidecar proxy continues to enforce authentication at the HTTP layer. No new permission boundaries are introduced.
+- **Batch Response Authorization** — Verify batch endpoint applies same RBAC filtering as single job endpoint (users only see jobs they have access to)
+- **Cross-Tenant Isolation** — Batch request cannot retrieve job IDs from another tenant's namespace
 
 ---
 
@@ -228,6 +243,9 @@ Each category below must be explicitly addressed. If a category does not apply t
 | URI resolution adds MLflow API call latency, potentially blocking job completion | Medium | Medium | Implement 5s timeout for MLflow artifacts/list call; measure p99 latency impact; degrade gracefully by setting uri_resolution_error without blocking |
 | PostgreSQL schema migration failure or rollback during production deployment | High | Low | Test migration in staging with production-like data volume; implement automated rollback; validate migration idempotency |
 | Adapter rebuilds with provider YAML digest updates fail to pull new images or reference wrong SDK version | Medium | Low | Test provider YAML digest update workflow in staging; validate all three adapter images contain SDK v0.1.5; add smoke tests |
+| Batch timeout budget misinterpretation (5s per-job vs per-batch) causes client-side timeouts | High | Medium | Add integration tests for timeout budget calculation with varying batch sizes |
+| Audit logging volume at scale degrades database write performance | High | Medium | Implement audit log batching/buffering, test throughput with concurrent batch requests |
+| Partial batch failures (some job IDs valid, some invalid) lack clear error semantics | Medium | High | Define batch response error format, add tests for mixed valid/invalid job IDs |
 
 ---
 
@@ -240,6 +258,7 @@ Each category below must be explicitly addressed. If a category does not apply t
 - Konflux build pipelines for rebuilding adapter images
 - Container registry for storing adapter images with updated eval-hub-sdk versions
 - HTTP proxy infrastructure for fault injection testing (selectively failing PUT requests to MLflow)
+- Audit trail infrastructure for artifact URI resolution logging
 
 ### 9.2 Configuration
 - eval-hub server environment variables (database connection string, MLflow tracking URI)
@@ -267,15 +286,15 @@ Each category below must be explicitly addressed. If a category does not apply t
 
 | Category | Total | P0 | P1 | P2 |
 |----------|-------|----|----|-----|
-| TC-API | 3 | 3 | 0 | 0 |
+| TC-API | 4 | 4 | 0 | 0 |
 | TC-SDK | 3 | 2 | 1 | 0 |
 | TC-STATUS | 4 | 4 | 0 | 0 |
-| TC-SEC | 1 | 1 | 0 | 0 |
-| TC-PERF | 2 | 0 | 0 | 2 |
+| TC-SEC | 2 | 2 | 0 | 0 |
+| TC-PERF | 3 | 0 | 1 | 2 |
 | TC-COMPAT | 3 | 1 | 2 | 0 |
-| TC-NEG | 2 | 1 | 1 | 0 |
-| TC-E2E | 3 | 3 | 0 | 0 |
-| **Total** | **20** | **13** | **5** | **2** |
+| TC-NEG | 3 | 2 | 1 | 0 |
+| TC-E2E | 4 | 4 | 0 | 0 |
+| **Total** | **26** | **17** | **6** | **3** |
 
 ### 10.2 Endpoint Coverage
 
@@ -289,12 +308,14 @@ Each category below must be explicitly addressed. If a category does not apply t
 | DefaultCallbacks (status event payload) | TC-SDK-002, TC-SDK-003, TC-E2E-001, TC-E2E-002 | |
 | PostgreSQL schema migration | TC-COMPAT-001, TC-E2E-002 | |
 | openapi-diff validation | TC-COMPAT-003 | |
+| POST /api/v1/evaluations/jobs/batch | TC-API-004, TC-SEC-002, TC-PERF-003, TC-NEG-003, TC-E2E-004 | |
 
 ### 10.3 Document Change Log
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-04-26 | Initial test plan |
+| 1.1.0 | 2026-04-26 | Updated with ADR: batch endpoint, audit logging, PostgreSQL 13+, Python 3.11+; resolved 3 gaps; added 3 risks |
 
 ---
 

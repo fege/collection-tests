@@ -7,10 +7,10 @@
 
 | Metric | Count |
 |--------|-------|
-| Total Test Cases | 20 |
-| P0 (Critical) | 13 |
-| P1 (High) | 5 |
-| P2 (Medium) | 2 |
+| Total Test Cases | 26 |
+| P0 (Critical) | 17 |
+| P1 (High) | 6 |
+| P2 (Medium) | 3 |
 
 ## API Endpoint Integration Tests (TC-API)
 
@@ -19,6 +19,7 @@
 | [TC-API-001](TC-API-001.md) | Job status response includes artifact URIs after successful publication | P0 |
 | [TC-API-002](TC-API-002.md) | Status event endpoint accepts artifact metadata in payload | P0 |
 | [TC-API-003](TC-API-003.md) | MLflow artifacts/list API returns artifact paths via sidecar proxy | P0 |
+| [TC-API-004](TC-API-004.md) | Batch endpoint returns multiple job statuses with artifact URIs | P0 |
 
 ## eval-hub-sdk DefaultCallbacks Tests (TC-SDK)
 
@@ -42,6 +43,7 @@
 | Test Case | Title | Priority |
 |-----------|-------|----------|
 | [TC-SEC-001](TC-SEC-001.md) | Artifact URIs must not expose raw S3/MinIO URLs or presigned URLs | P0 |
+| [TC-SEC-002](TC-SEC-002.md) | Batch response artifact URIs use same sanitization rules as single endpoint | P0 |
 
 ## Performance Tests (TC-PERF)
 
@@ -49,6 +51,7 @@
 |-----------|-------|----------|
 | [TC-PERF-001](TC-PERF-001.md) | GET jobs/{id} latency increase within NFR threshold | P2 |
 | [TC-PERF-002](TC-PERF-002.md) | POST events latency increase within NFR threshold | P2 |
+| [TC-PERF-003](TC-PERF-003.md) | Batch endpoint latency within 200ms for 50 job IDs | P1 |
 
 ## Backward Compatibility and Migration Tests (TC-COMPAT)
 
@@ -64,6 +67,7 @@
 |-----------|-------|----------|
 | [TC-NEG-001](TC-NEG-001.md) | URI resolution timeout produces CompleteWithWarnings with uri_resolution_error | P0 |
 | [TC-NEG-002](TC-NEG-002.md) | MLflow artifacts/list network failure degrades gracefully | P1 |
+| [TC-NEG-003](TC-NEG-003.md) | Batch request with invalid job IDs handles partial failures | P0 |
 
 ## End-to-End Scenario Tests (TC-E2E)
 
@@ -72,3 +76,4 @@
 | [TC-E2E-001](TC-E2E-001.md) | Successful evaluation with artifact URIs surfaced in job status | P0 |
 | [TC-E2E-002](TC-E2E-002.md) | Partial artifact failure end-to-end with CompleteWithWarnings | P0 |
 | [TC-E2E-003](TC-E2E-003.md) | CI/CD pipeline consumes artifact URIs for automated report retrieval | P0 |
+| [TC-E2E-004](TC-E2E-004.md) | Batch status retrieval for governance dashboard with mixed job outcomes | P0 |
