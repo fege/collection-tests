@@ -3,8 +3,10 @@ test_case_id: TC-SM-002
 source_key: RHAISTRAT-1507
 priority: P0
 status: Draft
-automation_status: Not Started
+automation_status: Complete
 last_updated: '2026-04-27'
+automation_file: tests/model_explainability/evalhub/test_evalhub_servicemonitor_lifecycle.py
+automation_function: null
 ---
 # TC-SM-002: ServiceMonitor carries ownerReference to EvalHub CR
 

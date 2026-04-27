@@ -3,8 +3,10 @@ test_case_id: TC-RBAC-001
 source_key: RHAISTRAT-1507
 priority: P1
 status: Draft
-automation_status: Not Started
+automation_status: Complete
 last_updated: '2026-04-27'
+automation_file: tests/model_explainability/evalhub/test_evalhub_servicemonitor_security.py
+automation_function: null
 ---
 # TC-RBAC-001: Operator ClusterRole has ServiceMonitor CRUD permissions
 

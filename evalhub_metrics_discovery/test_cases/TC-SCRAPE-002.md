@@ -3,8 +3,10 @@ test_case_id: TC-SCRAPE-002
 source_key: RHAISTRAT-1507
 priority: P1
 status: Draft
-automation_status: Not Started
+automation_status: Complete
 last_updated: '2026-04-27'
+automation_file: tests/model_explainability/evalhub/test_evalhub_servicemonitor_prometheus.py
+automation_function: null
 ---
 # TC-SCRAPE-002: Metrics queryable via Prometheus query API
 

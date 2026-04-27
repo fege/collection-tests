@@ -3,8 +3,10 @@ test_case_id: TC-UPGRADE-001
 source_key: RHAISTRAT-1507
 priority: P2
 status: Draft
-automation_status: Not Started
+automation_status: Complete
 last_updated: '2026-04-27'
+automation_file: tests/model_explainability/evalhub/test_evalhub_servicemonitor_upgrade.py
+automation_function: null
 ---
 # TC-UPGRADE-001: Existing EvalHub instances get ServiceMonitor after operator upgrade
 

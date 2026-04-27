@@ -3,8 +3,10 @@ test_case_id: TC-NEG-002
 source_key: RHAISTRAT-1507
 priority: P1
 status: Draft
-automation_status: Not Started
+automation_status: N/A
 last_updated: '2026-04-27'
+automation_file: null
+automation_function: null
 ---
 # TC-NEG-002: Prometheus scraping blocked when NetworkPolicy missing
 
