@@ -2,14 +2,14 @@
 feature: evalhub_artifact_publication
 source_key: RHAISTRAT-1525
 source_type: strat
-version: 1.1.0
+version: 1.1.1
 status: In Review
 author: TrustyAI / Responsible AI
 components:
 - Model Eval
 additional_docs:
 - /tmp/mock-adr-evalhub.md
-last_updated: '2026-04-26'
+last_updated: '2026-04-27'
 reviewers: []
 ---
 # EvalHub Artifact Publication Test Plan

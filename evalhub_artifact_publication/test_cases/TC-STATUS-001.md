@@ -3,8 +3,11 @@ test_case_id: TC-STATUS-001
 source_key: RHAISTRAT-1525
 priority: P0
 status: Draft
-automation_status: Not Started
-last_updated: '2026-04-26'
+automation_status: Complete
+last_updated: '2026-04-27'
+automation_file: tests/features/artifact_publication_status.feature
+automation_function: 'Scenario: Partial artifact failure produces CompleteWithWarnings
+  status'
 ---
 # TC-STATUS-001: Partial artifact failure produces CompleteWithWarnings status
 

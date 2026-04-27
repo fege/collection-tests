@@ -7,7 +7,7 @@ last_updated: '2026-04-26'
 ---
 # Gaps — EvalHub Artifact Publication
 
-## Resolved Gaps
+## Resolved Gaps (3 gaps resolved in v1.1.0)
 
 ### Environment & Infrastructure
 - ✅ PostgreSQL version requirement not specified → **Resolved by**: ADR (PostgreSQL 13+ required for JSONB column features)
