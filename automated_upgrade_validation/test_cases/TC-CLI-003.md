@@ -1,12 +1,15 @@
 ---
-test_case_id: TC-CLI-003
-source_key: RHAISTRAT-1519
-priority: P1
-status: Draft
-automation_status: Not Started
+automation_status: Implemented
+file: tests/test_cli_automated_upgrade_validation.py
+function: test_tc_cli_003
 last_updated: '2026-05-04'
+priority: P1
+source_key: RHAISTRAT-1519
+status: Draft
+test_case_id: TC-CLI-003
 upgrade_phase: both
 ---
+
 # TC-CLI-003: Upgrade completes successfully without odh-cli dependency
 
 **Objective**: Verify that the upgrade flow remains valid without requiring customers to depend on odh-cli — the CLI is a helper, not a gate.

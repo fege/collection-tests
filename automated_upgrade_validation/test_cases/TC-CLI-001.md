@@ -1,12 +1,15 @@
 ---
-test_case_id: TC-CLI-001
-source_key: RHAISTRAT-1519
-priority: P1
-status: Draft
-automation_status: Not Started
+automation_status: Implemented
+file: tests/test_cli_automated_upgrade_validation.py
+function: test_tc_cli_001
 last_updated: '2026-05-04'
+priority: P1
+source_key: RHAISTRAT-1519
+status: Draft
+test_case_id: TC-CLI-001
 upgrade_phase: pre
 ---
+
 # TC-CLI-001: odh-cli prerequisite resolution helper executes correctly
 
 **Objective**: Verify that the odh-cli prerequisite resolution helper correctly identifies and resolves prerequisites on the pre-upgrade cluster.
